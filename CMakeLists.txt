@@ -31,7 +31,7 @@ if (WITH_PDAL)
 endif()
 
 set(SOURCES point_io.cpp)
-set(HEADERS point_io.hpp)
+set(HEADERS point_io.hpp utils.hpp)
 
 if (WITH_PDAL)
     add_definitions(-DWITH_PDAL)

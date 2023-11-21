@@ -40,19 +40,26 @@ size_t getVertexCount(const std::string &line) {
     return std::stoi(tokens[2]);
 }
 
-PointSet *readPointSet(const std::string &filename, uint8_t onlyClass) {
+PointSet *readPointSet(const std::string &filename, int classification, int decimation) {
+    if (decimation < 1) throw std::runtime_error("Decimation must be >= 1");
+    else if (decimation > 1) std::cout << "Decimation set to " << decimation << std::endl;
+
     PointSet *r;
     const fs::path p(filename);
     if (p.extension().string() == ".ply"){
-        std::cout << std::to_string(onlyClass) << std::endl;
-        if (onlyClass != 255) throw std::runtime_error("Classification is not implemented for PLY files.");
-        r = fastPlyReadPointSet(filename);
-    } else r = pdalReadPointSet(filename, onlyClass);
+        if (classification != -1) throw std::runtime_error("Classification is not implemented for PLY files.");
+        r = fastPlyReadPointSet(filename, decimation);
+    } else r = pdalReadPointSet(filename, 
+                                classification >= 0 && classification <= 255 ? static_cast<uint8_t>(classification) : 255, 
+                                decimation);
+    
+    if (decimation > 1) std::cout << "Points after decimation: " << r->points.size() << std::endl;
+    std::cout << "Point cloud bounds are " << r->extent << std::endl;
 
     return r;
 }
 
-PointSet *fastPlyReadPointSet(const std::string &filename) {
+PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
     std::ifstream reader(filename, std::ios::binary);
     if (!reader.is_open())
         throw std::runtime_error("Cannot open file " + filename);
@@ -85,6 +92,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename) {
     bool hasViews = false;
     bool hasNormals = false;
     bool hasColors = false;
+    bool decimate = decimation > 1;
 
     std::getline(reader, line);
     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
@@ -99,14 +107,17 @@ PointSet *fastPlyReadPointSet(const std::string &filename) {
         line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
     }
 
-    r->points.resize(count);
+    r->points.resize(count / decimation);
 
     // Read points
     if (ascii) {
         uint16_t buf;
         float fbuf;
+        size_t i = 0;
 
-        for (size_t i = 0; i < count; i++) {
+        for (size_t idx = 0; idx < count; idx++) {
+            if (decimate && idx % decimation == 0) continue;
+
             reader >> r->points[i][0]
                 >> r->points[i][1]
                 >> r->points[i][2];
@@ -121,6 +132,10 @@ PointSet *fastPlyReadPointSet(const std::string &filename) {
             if (hasViews) {
                 reader >> buf;
             }
+
+            r->extent.update(r->points[i][0], r->points[i][1]);
+
+            i++;
         }
     }
     else {
@@ -128,8 +143,11 @@ PointSet *fastPlyReadPointSet(const std::string &filename) {
         // Read points
         uint8_t color[3];
         XYZ buf;
+        size_t i = 0;
 
-        for (size_t i = 0; i < count; i++) {
+        for (size_t idx = 0; idx < count; idx++) {
+            if (decimate && idx % decimation == 0) continue;
+
             reader.read(reinterpret_cast<char *>(&buf), sizeof(float) * 3);
             r->points[i][0] = static_cast<double>(buf.x);
             r->points[i][1] = static_cast<double>(buf.y);
@@ -146,6 +164,10 @@ PointSet *fastPlyReadPointSet(const std::string &filename) {
             if (hasViews) {
                 reader.read(reinterpret_cast<char *>(&color[0]), sizeof(uint8_t));
             }
+
+            r->extent.update(r->points[i][0], r->points[i][1]);
+
+            i++;
         }
     }
 
@@ -166,7 +188,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename) {
     return r;
 }
 
-PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass) {
+PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass, size_t decimation) {
     #ifdef WITH_PDAL
     std::string classDimension;
     pdal::StageFactory factory;
@@ -209,6 +231,7 @@ PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass) {
     const size_t count = pView->size();
     const pdal::PointLayoutPtr layout(table->layout());
     const bool hasClass = !classDimension.empty();
+    const bool decimate = decimation > 1;
 
     pdal::Dimension::Id classId;
     if (hasClass) {
@@ -216,7 +239,7 @@ PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass) {
         classId = layout->findDim(classDimension);
     }
 
-    r->points.resize(count);
+    r->points.resize(count / decimation);
     if (!hasClass && onlyClass != 255) throw std::runtime_error("Cannot filter by classification (no classification dimension found)");
     bool filter = hasClass && onlyClass != 255;
 
@@ -224,12 +247,17 @@ PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass) {
     for (pdal::PointId idx = 0; idx < count; ++idx) {
         auto p = pView->point(idx);
         if (filter && p.getFieldAs<uint8_t>(classId) != onlyClass) continue; // Skip
+        if (decimate && idx % decimation == 0) continue;
 
         r->points[i][0] = p.getFieldAs<double>(pdal::Dimension::Id::X);
         r->points[i][1] = p.getFieldAs<double>(pdal::Dimension::Id::Y);
         r->points[i][2] = p.getFieldAs<double>(pdal::Dimension::Id::Z);
+        r->extent.update(r->points[i][0], r->points[i][1]);
+
         i++;
     }
+
+    r->points.resize(i);
 
     // for (size_t idx = 0; idx < count; idx++) {
     //     std::cout << r->points[idx][0] << " ";

@@ -1,4 +1,5 @@
 #include "point_io.hpp"
+#include "utils.hpp"
 
 #include "vendor/cxxopts.hpp"
 
@@ -9,7 +10,15 @@ int main(int argc, char **argv) {
     options.add_options()
         ("i,input", "Input point cloud (.las, .las, .ply)", cxxopts::value<std::string>())
         ("o,output", "Output GeoTIFF DEM (.tif)", cxxopts::value<std::string>()->default_value("dem.tif"))
-        ("t,tilewidth", "Tile width", cxxopts::value<int>()->default_value("4096"))
+        ("t,tile-size", "Tile size", cxxopts::value<int>()->default_value("4096"))
+        ("c,classification", "Only use points matching this classification", cxxopts::value<int>()->default_value("-1"))
+        ("d,decimation", "Read every Nth point", cxxopts::value<int>()->default_value("1"))
+        ("u,output-type", "One of: [min, max, idw]", cxxopts::value<std::string>()->default_value("max"))
+        ("r,radiuses", "Comma separated list of radius values to generate and stack", cxxopts::value<std::string>()->default_value("0.56"))
+        ("m,max-concurrency", "Maximum number of threads to use", cxxopts::value<int>()->default_value("-1"))
+        ("tmpdir", "Temporary directory to store intermediate files", cxxopts::value<std::string>()->default_value("tmp"))
+        
+        
         ("h,help", "Print usage")
         ;
     options.parse_positional({ "input" });
@@ -32,9 +41,17 @@ int main(int argc, char **argv) {
     try {
         const auto inputFilename = result["input"].as<std::string>();
         const auto outputFilename = result["output"].as<std::string>();
-        const auto tileWidth = result["tilewidth"].as<int>();
+        const auto tileSize = result["tile-size"].as<int>();
+        const auto classification = result["classification"].as<int>();
+        const auto decimation = result["decimation"].as<int>();
+        const auto radiuses = parseCSV(result["radiuses"].as<std::string>());
 
-        auto *pset = readPointSet(inputFilename);
+        for (const double &d: radiuses){
+            std::cout << d << std::endl;
+        }
+        auto *pset = readPointSet(inputFilename, classification, decimation);
+        
+        
     }
     catch (std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;
