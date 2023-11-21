@@ -30,8 +30,8 @@ if (WITH_PDAL)
     endif()
 endif()
 
-set(SOURCES point_io.cpp)
-set(HEADERS point_io.hpp utils.hpp)
+set(SOURCES point_io.cpp render.cpp)
+set(HEADERS point_io.hpp utils.hpp render.hpp)
 
 if (WITH_PDAL)
     add_definitions(-DWITH_PDAL)
