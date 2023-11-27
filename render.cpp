@@ -24,10 +24,9 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
 
     if (fs::exists(pOutDir)){
         if (!force) throw std::runtime_error(outDir + " exists (use --force to overwrite results)");
-        fs::remove_all(pOutDir);
+    }else{
+        fs::create_directories(pOutDir);
     }
-
-    fs::create_directories(pOutDir);
 
     // Generate tile list
     unsigned int width = static_cast<int>(std::ceil(pset->extent.width() / resolution));
@@ -110,7 +109,7 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
         }
     }
 
-    // Sort tiles by increasing radius
+    // Sort tiles by decreasing radius
     std::sort(tiles.begin(), tiles.end(), 
         [](Tile const &a, Tile const &b) {
             return a.radius < b.radius; 
