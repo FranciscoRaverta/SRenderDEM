@@ -26,3 +26,4 @@ set(HEADERS point_io.hpp utils.hpp render.hpp)
 
 add_executable(renderdem main.cpp ${SOURCES} ${HEADERS})
 target_link_libraries(renderdem ${STDPPFS_LIBRARY} OpenMP::OpenMP_CXX ${PDAL_LIBRARIES})
+install(TARGETS renderdem RUNTIME DESTINATION bin)
