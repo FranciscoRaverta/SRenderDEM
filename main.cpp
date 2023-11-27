@@ -12,10 +12,10 @@ int main(int argc, char **argv) {
         ("t,tile-size", "Tile size", cxxopts::value<int>()->default_value("4096"))
         ("c,classification", "Only use points matching this classification", cxxopts::value<int>()->default_value("-1"))
         ("d,decimation", "Read every Nth point", cxxopts::value<int>()->default_value("1"))
-        ("o,output-type", "One of: [min, max, idw]", cxxopts::value<std::string>()->default_value("max"))
+        ("o,output-type", "One of: [max, idw]", cxxopts::value<std::string>()->default_value("max"))
         ("s,radiuses", "Comma separated list of radius values to generate and stack", cxxopts::value<std::string>()->default_value("0.56"))
         ("r,resolution", "Resolution of output GeoTIFF DEM", cxxopts::value<double>()->default_value("0.1"))
-        ("m,max-concurrency", "Maximum number of threads to use", cxxopts::value<int>()->default_value("-1"))
+        ("x,max-tiles", "Maximum number of tiles to generate (as safety precaution for OOM issues)", cxxopts::value<int>()->default_value("0"))
         ("u,outdir", "Directory to store results", cxxopts::value<std::string>()->default_value("output"))
         
         ("f,force", "Overwrite existing results")
@@ -41,15 +41,17 @@ int main(int argc, char **argv) {
     try {
         const auto inputFilename = result["input"].as<std::string>();
         const auto outDir = result["outdir"].as<std::string>();
+        const auto outputType = result["output-type"].as<std::string>();
         const auto tileSize = result["tile-size"].as<int>();
         const auto classification = result["classification"].as<int>();
         const auto decimation = result["decimation"].as<int>();
         const auto radiuses = parseCSV(result["radiuses"].as<std::string>());
         const auto resolution = result["resolution"].as<double>();
         const bool force = result.count("force");
+        const auto maxTiles = result["max-tiles"].as<int>();
 
         auto *pset = readPointSet(inputFilename, classification, decimation);
-        render(pset, outDir, tileSize, radiuses, resolution, force);
+        render(pset, outDir, outputType, tileSize, radiuses, resolution, maxTiles, force);
     }
     catch (std::exception &e) {
         std::cerr << "Error: " << e.what() << std::endl;

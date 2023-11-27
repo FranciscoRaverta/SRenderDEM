@@ -1,6 +1,12 @@
 #ifndef UTILS_H
 #define UTILS_H
 
+#ifdef WIN32
+#include <windows.h>
+#else
+#include <unistd.h>
+#endif
+
 static inline std::vector<std::string> split(const std::string &s, const std::string &delimiter){
     size_t posStart = 0, posEnd, delimLen = delimiter.length();
     std::string token;
@@ -24,5 +30,21 @@ static inline std::vector<double> parseCSV(const std::string &s){
     }
     return res;
 }
+
+
+#ifdef WIN32
+static unsigned long long getTotalMemory(){
+    MEMORYSTATUSEX status;
+    status.dwLength = sizeof(status);
+    GlobalMemoryStatusEx(&status);
+    return status.ullTotalPhys;
+}
+#else
+static unsigned long long getTotalMemory(){
+    long pages = sysconf(_SC_PHYS_PAGES);
+    long page_size = sysconf(_SC_PAGE_SIZE);
+    return pages * page_size;
+}
+#endif
 
 #endif

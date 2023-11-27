@@ -4,16 +4,13 @@
 #include <iostream>
 #include <fstream>
 #include <vector>
-#include <array>
 #include <algorithm>
 #include <limits>
 
-#ifdef WITH_PDAL
 #include <pdal/Options.hpp>
 #include <pdal/PointTable.hpp>
 #include <pdal/StageFactory.hpp>
 #include <pdal/io/BufferReader.hpp>
-#endif
 
 struct XYZ {
     float x;
@@ -58,22 +55,26 @@ struct Extent{
 
 
 struct PointSet {
-    std::vector<std::array<double, 3> > points;
+    std::vector<double> x;
+    std::vector<double> y;
+    std::vector<double> z;
 
-    #ifdef WITH_PDAL
     pdal::PointViewPtr pointView = nullptr;
-    #endif
 
-    inline size_t count() const { return points.size(); }
-
-    void appendPoint(PointSet &src, size_t idx) {
-        points.push_back(src.points[idx]);
+    inline size_t count() const { return x.size(); }
+    inline size_t size() const { return x.size(); }
+    inline void resize(size_t count){ 
+        x.resize(count);
+        y.resize(count);
+        z.resize(count);
     }
+    
 
     ~PointSet() {
     }
 
     Extent extent;
+    pdal::SpatialReference srs;
 };
 
 std::string getVertexLine(std::ifstream &reader);

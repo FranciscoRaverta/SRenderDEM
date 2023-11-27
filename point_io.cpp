@@ -1,6 +1,5 @@
 #include <random>
 #include <filesystem>
-
 #include "point_io.hpp"
 
 namespace fs = std::filesystem;
@@ -53,7 +52,7 @@ PointSet *readPointSet(const std::string &filename, int classification, int deci
                                 classification >= 0 && classification <= 255 ? static_cast<uint8_t>(classification) : 255, 
                                 decimation);
     
-    if (decimation > 1) std::cout << "Points after decimation: " << r->points.size() << std::endl;
+    if (decimation > 1) std::cout << "Points after decimation: " << r->size() << std::endl;
     std::cout << "Point cloud bounds are " << r->extent << std::endl;
 
     return r;
@@ -107,7 +106,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
         line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
     }
 
-    r->points.resize(count / decimation);
+    r->resize(count / decimation);
 
     // Read points
     if (ascii) {
@@ -118,9 +117,9 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
         for (size_t idx = 0; idx < count; idx++) {
             if (decimate && idx % decimation == 0) continue;
 
-            reader >> r->points[i][0]
-                >> r->points[i][1]
-                >> r->points[i][2];
+            reader >> r->x[i]
+                >> r->y[i]
+                >> r->z[i];
             if (hasNormals) {
                 reader >> fbuf
                     >> fbuf
@@ -133,7 +132,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
                 reader >> buf;
             }
 
-            r->extent.update(r->points[i][0], r->points[i][1]);
+            r->extent.update(r->x[i], r->y[i]);
 
             i++;
         }
@@ -149,9 +148,9 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
             if (decimate && idx % decimation == 0) continue;
 
             reader.read(reinterpret_cast<char *>(&buf), sizeof(float) * 3);
-            r->points[i][0] = static_cast<double>(buf.x);
-            r->points[i][1] = static_cast<double>(buf.y);
-            r->points[i][2] = static_cast<double>(buf.z);
+            r->x[i] = static_cast<double>(buf.x);
+            r->y[i] = static_cast<double>(buf.y);
+            r->z[i] = static_cast<double>(buf.z);
             
             if (hasNormals) {
                 reader.read(reinterpret_cast<char *>(&buf), sizeof(float) * 3);
@@ -165,7 +164,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
                 reader.read(reinterpret_cast<char *>(&color[0]), sizeof(uint8_t));
             }
 
-            r->extent.update(r->points[i][0], r->points[i][1]);
+            r->extent.update(r->x[i], r->y[i]);
 
             i++;
         }
@@ -189,7 +188,6 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 }
 
 PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass, size_t decimation) {
-    #ifdef WITH_PDAL
     std::string classDimension;
     pdal::StageFactory factory;
     const std::string driver = pdal::StageFactory::inferReaderDriver(filename);
@@ -239,7 +237,7 @@ PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass, size_
         classId = layout->findDim(classDimension);
     }
 
-    r->points.resize(count / decimation);
+    r->resize(count / decimation);
     if (!hasClass && onlyClass != 255) throw std::runtime_error("Cannot filter by classification (no classification dimension found)");
     bool filter = hasClass && onlyClass != 255;
 
@@ -249,15 +247,19 @@ PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass, size_
         if (filter && p.getFieldAs<uint8_t>(classId) != onlyClass) continue; // Skip
         if (decimate && idx % decimation == 0) continue;
 
-        r->points[i][0] = p.getFieldAs<double>(pdal::Dimension::Id::X);
-        r->points[i][1] = p.getFieldAs<double>(pdal::Dimension::Id::Y);
-        r->points[i][2] = p.getFieldAs<double>(pdal::Dimension::Id::Z);
-        r->extent.update(r->points[i][0], r->points[i][1]);
+        r->x[i] = p.getFieldAs<double>(pdal::Dimension::Id::X);
+        r->y[i] = p.getFieldAs<double>(pdal::Dimension::Id::Y);
+        r->z[i] = p.getFieldAs<double>(pdal::Dimension::Id::Z);
+        r->extent.update(r->x[i], r->y[i]);
 
         i++;
     }
 
-    r->points.resize(i);
+    r->resize(i);
+
+    if (pView->spatialReference().valid()){
+        r->srs = pView->spatialReference();
+    }
 
     // for (size_t idx = 0; idx < count; idx++) {
     //     std::cout << r->points[idx][0] << " ";
@@ -272,10 +274,6 @@ PointSet *pdalReadPointSet(const std::string &filename, uint8_t onlyClass, size_
     // exit(1);
 
     return r;
-    #else
-    fs::path p(filename);
-    throw std::runtime_error("Unsupported file extension " + p.extension().string() + ", build program with PDAL support for additional file types support.");
-    #endif
 }
 
 void checkHeader(std::ifstream &reader, const std::string &prop) {

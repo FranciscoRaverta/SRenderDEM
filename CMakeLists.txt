@@ -1,8 +1,6 @@
 cmake_minimum_required(VERSION 3.10)
 project(renderdem VERSION 1.0 LANGUAGES CXX)
 
-SET(WITH_PDAL ON CACHE BOOL "Build PDAL readers support")
-
 if(NOT CMAKE_BUILD_TYPE)
     set(CMAKE_BUILD_TYPE "Release" CACHE STRING
       "Choose the type of build, options are: Debug Release
@@ -19,24 +17,12 @@ if (NOT WIN32 AND NOT APPLE)
 endif()
 
 find_package(OpenMP REQUIRED)
+find_package(PDAL REQUIRED)
 
-if (WITH_PDAL)
-    find_package(PDAL)
-    if (PDAL_FOUND)
-        include_directories(${PDAL_INCLUDE_DIRS})
-    else()
-        message(WARNING "PDAL not found, LAS/LAZ support will not be built")
-        set(WITH_PDAL OFF)
-    endif()
-endif()
+include_directories(${PDAL_INCLUDE_DIRS})
 
 set(SOURCES point_io.cpp render.cpp)
 set(HEADERS point_io.hpp utils.hpp render.hpp)
 
-if (WITH_PDAL)
-    add_definitions(-DWITH_PDAL)
-    set(PDAL_LIB ${PDAL_LIBRARIES})
-endif()
-
 add_executable(renderdem main.cpp ${SOURCES} ${HEADERS})
-target_link_libraries(renderdem ${STDPPFS_LIBRARY} OpenMP::OpenMP_CXX ${PDAL_LIB})
+target_link_libraries(renderdem ${STDPPFS_LIBRARY} OpenMP::OpenMP_CXX ${PDAL_LIBRARIES})
