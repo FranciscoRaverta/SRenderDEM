@@ -66,6 +66,13 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
 
     std::cout << "DEM resolution is (" << width << ", " << height << "), max tile size is " << tileSize << ", will split DEM generation into " << numTiles << " tiles" << std::endl;
 
+    if (maxTiles > 0){
+        if (numTiles > maxTiles){
+            std::cerr << "Max tiles limit exceeded (" << maxTiles << "). This is a strong indicator that the reconstruction failed" << std::endl;
+            exit(1);
+        }
+    }
+
     double tileBoundsWidth = pset->extent.width() / static_cast<double>(numSplits);
     double tileBoundsHeight = pset->extent.height() / static_cast<double>(numSplits);
 
@@ -99,13 +106,6 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
                 tiles.push_back(t);
             }
 
-        }
-    }
-
-    if (maxTiles > 0){
-        if (tiles.size() > maxTiles){
-            std::cerr << "Max tiles limit exceeded (" << maxTiles << "). This is a strong indicator that the reconstruction failed" << std::endl;
-            exit(1);
         }
     }
 
