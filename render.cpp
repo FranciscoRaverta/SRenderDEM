@@ -125,7 +125,8 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
     }
 
     #pragma omp parallel for
-    for (const auto &t: tiles){
+    for (int i = 0; i < tiles.size(); i++){
+        Tile t = tiles[i];
         int r_width = static_cast<int>(std::floor(t.bounds.width() / resolution) + 1);
         int r_height = static_cast<int>(std::floor(t.bounds.height() / resolution) + 1);
 

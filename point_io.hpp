@@ -25,15 +25,15 @@ struct Extent{
     double maxy;
 
     Extent(){
-        minx = miny = std::numeric_limits<double>::max();
-        maxx = maxy = std::numeric_limits<double>::min();
+        minx = miny = (std::numeric_limits<double>::max)();
+        maxx = maxy = (std::numeric_limits<double>::min)();
     }
 
     void inline update(double x, double y){
-        minx = std::min(minx, x);
-        maxx = std::max(maxx, x);
-        miny = std::min(miny, y);
-        maxy = std::max(maxy, y);
+        minx = (std::min)(minx, x);
+        maxx = (std::max)(maxx, x);
+        miny = (std::min)(miny, y);
+        maxy = (std::max)(maxy, y);
     }
 
     double width() const {
