@@ -103,8 +103,8 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
     }
 
     if (maxTiles > 0){
-        if (tiles.size() > maxTiles && finalDemPixels * 4 > getTotalMemory()){
-            std::cerr << "Max tiles limit exceeded (" << maxTiles << "). This is a strong indicator that the reconstruction failed and we would probably run out of memory trying to process this" << std::endl;
+        if (tiles.size() > maxTiles){
+            std::cerr << "Max tiles limit exceeded (" << maxTiles << "). This is a strong indicator that the reconstruction failed" << std::endl;
             exit(1);
         }
     }
