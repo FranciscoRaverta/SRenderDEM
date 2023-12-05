@@ -14,7 +14,6 @@ struct Tile{
     Extent bounds;
     Extent bufferedBounds;
     std::string filename;
-    std::vector<size_t> points;
 };
 
 void render(PointSet *pset, const std::string &outDir, const std::string &outputType,
@@ -109,11 +108,11 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
                 t.bounds.maxy = maxy;
                 t.radius = r;
 
-                const double BUFFER = 5; // Assume meters
-                t.bufferedBounds.minx = t.bounds.minx - BUFFER;
-                t.bufferedBounds.maxx = t.bounds.maxx + BUFFER;
-                t.bufferedBounds.miny = t.bounds.miny - BUFFER;
-                t.bufferedBounds.maxy = t.bounds.maxy + BUFFER;
+                const double buffer = r * 2;
+                t.bufferedBounds.minx = t.bounds.minx - buffer;
+                t.bufferedBounds.maxx = t.bounds.maxx + buffer;
+                t.bufferedBounds.miny = t.bounds.miny - buffer;
+                t.bufferedBounds.maxy = t.bounds.maxy + buffer;
 
                 tiles.push_back(t);
 
@@ -139,26 +138,6 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
         throw std::runtime_error("Unsupported output-type: " + outputType);
     }
 
-    // Build grid index
-    #pragma omp parallel
-    {
-        std::vector<size_t> points;
-
-        #pragma omp for nowait
-        for (int j = 0; j < tiles.size(); j++){
-            for (long long i = 0; i < pset->size(); i++){
-                Tile t = tiles[j];
-                if (pset->x[i] >= tiles[j].bufferedBounds.minx && pset->x[i] <= tiles[j].bufferedBounds.maxx &&
-                    pset->y[i] >= tiles[j].bufferedBounds.miny && pset->y[i] <= tiles[j].bufferedBounds.maxy){
-                    points.push_back(i);
-                }
-            }
-
-            #pragma omp critical
-            tiles[j].points.insert(tiles[j].points.end(), points.begin(), points.end());
-        }
-    }
-
     #pragma omp parallel for
     for (int i = 0; i < tiles.size(); i++){
         Tile t = tiles[i];
@@ -169,11 +148,11 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
                             r_width, r_height, 
                             resolution, t.radius, outputTypes, 0, 1.0);
         
-        // for (size_t i = 0; i < pset->size(); i++){
-        //     grid.addPoint(pset->x[i], pset->y[i], pset->z[i]);
-        // }
-        for (size_t i : t.points){
-            grid.addPoint(pset->x[i], pset->y[i], pset->z[i]);
+        for (size_t i = 0; i < pset->size(); i++){
+            if (pset->x[i] >= t.bufferedBounds.minx && pset->x[i] <= t.bufferedBounds.maxx &&
+                pset->y[i] >= t.bufferedBounds.miny && pset->y[i] <= t.bufferedBounds.maxy){
+                grid.addPoint(pset->x[i], pset->y[i], pset->z[i]);
+            }
         }
 
         std::array<double, 6> pixelToPos;
