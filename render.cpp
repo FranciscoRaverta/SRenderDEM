@@ -59,10 +59,10 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
         std::cout << "Really low resolution DEM requested (" << prev_width << ", " << prev_height << ") will set floor at " << RES_FLOOR << " pixels. Resolution changed to " << resolution << ". The scale of this reconstruction might be off." << std::endl;
     }
 
-    size_t finalDemPixels = width * height;
-
-    unsigned int numSplits = static_cast<int>(std::max<double>(1.0, std::ceil(std::log(std::ceil(finalDemPixels / static_cast<double>(tileSize * tileSize)))/std::log(2))));
-    unsigned int numTiles = numSplits * numSplits;
+    unsigned int numSplitsX = static_cast<int>(std::max<double>(1.0, std::ceil(width / static_cast<double>(tileSize))));
+    unsigned int numSplitsY = static_cast<int>(std::max<double>(1.0, std::ceil(height / static_cast<double>(tileSize))));
+    
+    unsigned int numTiles = numSplitsX * numSplitsY;
 
     std::cout << "DEM resolution is (" << width << ", " << height << "), max tile size is " << tileSize << ", will split DEM generation into " << numTiles << " tiles" << std::endl;
 
@@ -73,24 +73,28 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
         }
     }
 
-    double tileBoundsWidth = pset->extent.width() / static_cast<double>(numSplits);
-    double tileBoundsHeight = pset->extent.height() / static_cast<double>(numSplits);
+    double tileBoundsWidth = pset->extent.width() / static_cast<double>(numSplitsX);
+    double tileBoundsHeight = pset->extent.height() / static_cast<double>(numSplitsY);
 
     std::vector<Tile> tiles;
 
+    double minx;
+    double maxx;
+    double miny;
+    double maxy;
 
     for (const double &r: rads){
-        double minx = pset->extent.minx;
-        for (unsigned int x = 0; x < numSplits; x++){
-            double miny = pset->extent.miny;
-            double maxx = x == numSplits - 1 ? 
-                                pset->extent.maxx : 
-                                minx + tileBoundsWidth;
+        minx = pset->extent.minx;
+        for (unsigned int x = 0; x < numSplitsX; x++){
+            miny = pset->extent.miny;
+            maxx = x == numSplitsX - 1 ?
+                            pset->extent.maxx : 
+                            minx + tileBoundsWidth;
 
-            for (unsigned int y = 0; y < numSplits; y++){
-                double maxy = y == numSplits - 1 ? 
-                                    pset->extent.maxy : 
-                                    miny + tileBoundsHeight;
+            for (unsigned int y = 0; y < numSplitsY; y++){
+                maxy = y == numSplitsY - 1 ? 
+                                pset->extent.maxy : 
+                                miny + tileBoundsHeight;
 
                 std::stringstream ss;
                 ss << "r" << r << "_x" << x << "_y" << y << ".tif"; 
@@ -104,8 +108,11 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
                 t.radius = r;
 
                 tiles.push_back(t);
-            }
 
+                miny = maxy;
+            }
+            
+            minx = maxx;
         }
     }
 
