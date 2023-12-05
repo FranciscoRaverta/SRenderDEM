@@ -158,23 +158,36 @@ void render(PointSet *pset, const std::string &outDir, const std::string &output
 
         grid.finalize();
 
-        pdal::StringList options;
-
-        pdal::gdal::GDALError err = raster.open(r_width, r_height,
-            1, pdal::Dimension::Type::Float, -9999, options);
-
-        if (err != pdal::gdal::GDALError::None) throw std::runtime_error(raster.errorMsg());
-        int bandNum = 1;
-
         double *src = grid.data(outputType);
         double srcNoData = std::numeric_limits<double>::quiet_NaN();
-        err = raster.writeBand(src, srcNoData, 1, outputType);
-        if (err != pdal::gdal::GDALError::None) throw std::runtime_error(raster.errorMsg());
-        raster.close();
+
+        // Did we actually write anything, or is this an empty tile?
+        bool empty = true;
+        size_t pxCount = r_width * r_height;
+        for (size_t i = 0; i < pxCount; i++){
+            if (!isnan(src[i])){
+                empty = false;
+                break;
+            }
+        }
+
+        if (!empty){
+            pdal::StringList options;
+
+            pdal::gdal::GDALError err = raster.open(r_width, r_height,
+                1, pdal::Dimension::Type::Float, -9999, options);
+
+            if (err != pdal::gdal::GDALError::None) throw std::runtime_error(raster.errorMsg());
+            int bandNum = 1;
+            
+            err = raster.writeBand(src, srcNoData, 1, outputType);
+            if (err != pdal::gdal::GDALError::None) throw std::runtime_error(raster.errorMsg());
+            raster.close();
+        }
 
         #pragma omp critical
         {
-            std::cout << fs::path(t.filename).filename().string() << std::endl;
+            std::cout << fs::path(t.filename).filename().string() << (empty ? " [Empty]" : "") << std::endl;
         }
     }
 
