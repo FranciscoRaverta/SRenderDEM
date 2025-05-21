@@ -91,6 +91,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
     bool hasViews = false;
     bool hasNormals = false;
     bool hasColors = false;
+    bool hasSegmentation = false;
     bool decimate = decimation > 1;
 
     std::getline(reader, line);
@@ -100,6 +101,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
         if (hasHeader(line, "nx") || hasHeader(line, "normal_x") || hasHeader(line, "normalx")) hasNormals = true;
         if (hasHeader(line, "red") || hasHeader(line, "green") || hasHeader(line, "blue")) hasColors = true;
         if (hasHeader(line, "views")) hasViews = true;
+        if (hasHeader(line, "segmentation") || hasHeader(line, "segmentationConfidence")) hasSegmentation = true;
 
         if (c++ > 100) break;
         std::getline(reader, line);
@@ -128,6 +130,9 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
             if (hasColors) {
                 reader >> buf >> buf >> buf;
             }
+            if (hasSegmentation) {
+                reader >> buf >> buf
+            }
             if (hasViews) {
                 reader >> buf;
             }
@@ -141,6 +146,8 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
         // Read points
         uint8_t color[3];
+        uint8_t segmentation;
+        float segmentationConfidence;
         XYZ buf;
         size_t i = 0;
 
@@ -158,6 +165,11 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
             if (hasColors) {
                 reader.read(reinterpret_cast<char *>(&color), sizeof(uint8_t) * 3);
+            }
+
+            if (hasSegmentation) {
+                reader.read(reinterpret_cast<char *>(&segmentation), sizeof(uint8_t));
+                reader.read(reinterpret_cast<char *>(&segmentationConfidence), sizeof(float));
             }
 
             if (hasViews) {
