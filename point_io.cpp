@@ -313,6 +313,7 @@ void checkHeader(std::ifstream &reader, const std::string &prop) {
 
 bool hasHeader(const std::string &line, const std::string &prop) {
     //std::cout << line << " -> " << prop << " : " << line.substr(line.length() - prop.length(), prop.length()) << std::endl;
+    std::cout << line.substr(line.length() - prop.length(), prop.length()) << std::endl;
     return line.substr(0, 8) == "property" && line.substr(line.length() - prop.length(), prop.length()) == prop;
 }
 
