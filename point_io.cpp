@@ -131,7 +131,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
                 reader >> buf >> buf >> buf;
             }
             if (hasSegmentation) {
-                reader >> buf >> buf
+                reader >> buf >> buf;
             }
             if (hasViews) {
                 reader >> buf;
