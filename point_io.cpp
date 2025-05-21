@@ -110,8 +110,11 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
     r->resize(count / decimation);
 
+    std::cout << "Flag 1 FRAN" << std::endl;
+
     // Read points
     if (ascii) {
+        std::cout << "Flag 2 FRAN" << std::endl;
         uint16_t buf;
         float fbuf;
         size_t i = 0;
@@ -141,8 +144,10 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
             i++;
         }
+        std::cout << "Flag 2.5 FRAN" << std::endl;
     }
     else {
+        std::cout << "Flag 3 FRAN" << std::endl;
 
         // Read points
         uint8_t color[3];
@@ -180,6 +185,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
             i++;
         }
+        std::cout << "Flag 3.5 FRAN" << std::endl;
     }
 
     // for (size_t idx = 0; idx < count; idx++) {
