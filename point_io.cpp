@@ -87,8 +87,6 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
     checkHeader(reader, "y");
     checkHeader(reader, "z");
 
-    std::cout << "Flag 0 FRAN" << std::endl;
-
     int c = 0;
     bool hasViews = false;
     bool hasNormals = false;
@@ -99,29 +97,21 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
     std::getline(reader, line);
     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
 
-    std::cout << "Flag 0.1 FRAN" << std::endl;
-
     while (line != "end_header") {
         if (hasHeader(line, "nx") || hasHeader(line, "normal_x") || hasHeader(line, "normalx")) hasNormals = true;
         if (hasHeader(line, "red") || hasHeader(line, "green") || hasHeader(line, "blue")) hasColors = true;
         if (hasHeader(line, "views")) hasViews = true;
-        std::cout << "Flag 0.15 FRAN" << std::endl;
-        if (hasHeader(line, "segmentation")) hasSegmentation = true;// || hasHeader(line, "segmentationConfidence")) hasSegmentation = true;
-        std::cout << "Flag 0.15 FRAN" << std::endl;
+        if (hasHeader(line, "segmentation")) hasSegmentation = true;
+        
         if (c++ > 100) break;
         std::getline(reader, line);
         line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
     }
 
-    std::cout << "Flag 0.2 FRAN" << std::endl;
-
     r->resize(count / decimation);
-
-    std::cout << "Flag 1 FRAN" << std::endl;
 
     // Read points
     if (ascii) {
-        std::cout << "Flag 2 FRAN" << std::endl;
         uint16_t buf;
         float fbuf;
         size_t i = 0;
@@ -151,10 +141,8 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
             i++;
         }
-        std::cout << "Flag 2.5 FRAN" << std::endl;
     }
     else {
-        std::cout << "Flag 3 FRAN" << std::endl;
 
         // Read points
         uint8_t color[3];
@@ -192,7 +180,6 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
             i++;
         }
-        std::cout << "Flag 3.5 FRAN" << std::endl;
     }
 
     // for (size_t idx = 0; idx < count; idx++) {
@@ -313,7 +300,6 @@ void checkHeader(std::ifstream &reader, const std::string &prop) {
 
 bool hasHeader(const std::string &line, const std::string &prop) {
     //std::cout << line << " -> " << prop << " : " << line.substr(line.length() - prop.length(), prop.length()) << std::endl;
-    std::cout << line.substr(line.length() - prop.length(), prop.length()) << std::endl;
     return line.substr(0, 8) == "property" && line.substr(line.length() - prop.length(), prop.length()) == prop;
 }
 
