@@ -105,6 +105,7 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
         if (hasHeader(line, "nx") || hasHeader(line, "normal_x") || hasHeader(line, "normalx")) hasNormals = true;
         if (hasHeader(line, "red") || hasHeader(line, "green") || hasHeader(line, "blue")) hasColors = true;
         if (hasHeader(line, "views")) hasViews = true;
+        std::cout << "Flag 0.15 FRAN" << std::endl;
         if (hasHeader(line, "segmentation") || hasHeader(line, "segmentationConfidence")) hasSegmentation = true;
 
         if (c++ > 100) break;
