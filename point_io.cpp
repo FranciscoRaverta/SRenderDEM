@@ -87,6 +87,8 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
     checkHeader(reader, "y");
     checkHeader(reader, "z");
 
+    std::cout << "Flag 0 FRAN" << std::endl;
+
     int c = 0;
     bool hasViews = false;
     bool hasNormals = false;
@@ -96,6 +98,8 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
 
     std::getline(reader, line);
     line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
+
+    std::cout << "Flag 0.1 FRAN" << std::endl;
 
     while (line != "end_header") {
         if (hasHeader(line, "nx") || hasHeader(line, "normal_x") || hasHeader(line, "normalx")) hasNormals = true;
@@ -107,6 +111,8 @@ PointSet *fastPlyReadPointSet(const std::string &filename, size_t decimation) {
         std::getline(reader, line);
         line.erase(std::remove(line.begin(), line.end(), '\r'), line.end());
     }
+
+    std::cout << "Flag 0.2 FRAN" << std::endl;
 
     r->resize(count / decimation);
 
